@@ -248,6 +248,7 @@
       font-size: 13px;
       margin-top: 1rem;
       display: none;
+      word-break: break-word;
     }
 
     .solve-btn {
@@ -494,7 +495,11 @@
   </div>
 
   <script>
-    const apiKey = "";
+    /**
+     * API Key integrated for GitHub deployment.
+     */
+    const apiKey = "AIzaSyCVcsG83zKlWnSoXctQdw1DIKA0uC0U_vM"; 
+
     let imageBase64 = null;
     let imageType = null;
 
@@ -562,8 +567,9 @@
     }
 
     function showError(msg) {
-      errorMsg.textContent = msg;
+      errorMsg.innerHTML = `<strong>Error:</strong> ${msg}`;
       errorMsg.style.display = 'block';
+      console.error("Math Tutor Error:", msg);
     }
 
     function hideError() {
@@ -579,6 +585,10 @@
     solveBtn.addEventListener('click', solve);
 
     async function callGemini(contents) {
+      if (!apiKey) {
+        throw new Error("API Key is missing. If you are running this on GitHub, you must paste your Gemini API key into the 'apiKey' variable in the code.");
+      }
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
       
       const payload = {
@@ -607,10 +617,16 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-          if (!response.ok) throw new Error('API request failed');
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const msg = errorData.error?.message || response.statusText;
+            throw new Error(`API returned ${response.status}: ${msg}`);
+          }
+          
           return await response.json();
         } catch (e) {
-          if (i === 4) throw e;
+          if (i === 4 || e.message.includes("API Key is missing")) throw e;
           await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
         }
       }
@@ -643,12 +659,13 @@
 
         const result = await callGemini([{ role: "user", parts }]);
         const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!text) throw new Error("The AI didn't return a valid response. Please try again.");
+        
         const parsed = JSON.parse(text);
-
         renderResults(parsed);
       } catch (err) {
-        console.error(err);
-        showError('The AI could not process this request. Please try a clearer description or photo.');
+        showError(err.message);
       } finally {
         setLoading(false);
       }
