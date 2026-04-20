@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Maths Tutor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #ffffff;
+      --bg-sec:      #f0f4f8;
+      --bg-info:     #e1effe;
+      --bg-success:  #def7ec;
+      --bg-danger:   #fde8e8;
+      --text:        #1e293b;
+      --text-sec:    #475569;
+      --text-ter:    #94a3b8;
+      --text-info:   #1e429f;
+      --text-suc:    #03543f;
+      --text-danger: #9b1c1c;
+      --accent:      #2563eb;
+      --border:      rgba(37, 99, 235, 0.12);
+      --border-med:  rgba(37, 99, 235, 0.22);
+      --border-info: #a4cafe;
+      --border-danger:#f8b4b4;
+      --radius-md:   8px;
+      --radius-lg:   12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:          #0f172a;
+        --bg-sec:      #1e293b;
+        --bg-info:     #1e3a8a33;
+        --bg-success:  #065f4633;
+        --bg-danger:   #991b1b33;
+        --text:        #f1f5f9;
+        --text-sec:    #94a3b8;
+        --text-ter:    #475569;
+        --text-info:   #93c5fd;
+        --text-suc:    #6ee7b7;
+        --text-danger: #f87171;
+        --accent:      #3b82f6;
+        --border:      rgba(255,255,255,0.1);
+        --border-med:  rgba(255,255,255,0.2);
+        --border-info: #1e40af;
+        --border-danger:#7f1d1d;
+      }
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-sec);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 0 0 1.25rem;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 1.75rem;
+    }
+
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+    }
+
+    .header p {
+      font-size: 13px;
+      color: var(--text-sec);
+      font-weight: 400;
+    }
+
+    .upload-zone {
+      border: 1.5px dashed var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg);
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      background: var(--bg-info);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 14px;
+      background: var(--bg-info);
+      border: 1px solid var(--border-info);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .upload-label {
+      font-size: 14px;
+      color: var(--text-sec);
+      line-height: 1.7;
+    }
+
+    .upload-label strong { color: var(--accent); font-weight: 600; }
+
+    .preview-wrap {
+      display: none;
+      margin-top: 1rem;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-info);
+      position: relative;
+    }
+
+    .preview-wrap img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      display: block;
+      background: #f8fafc;
+      padding: 10px;
+    }
+
+    .clear-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border-med);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-sec);
+      transition: all 0.15s;
+    }
+
+    .clear-btn:hover {
+      color: var(--text-danger);
+      background: var(--bg-danger);
+      border-color: var(--border-danger);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 1.5rem 0;
+      color: var(--text-ter);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .alt-input label {
+      font-size: 11px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .alt-input textarea {
+      width: 100%;
+      border: 1px solid var(--border-med);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 90px;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .alt-input textarea:focus { 
+      border-color: var(--accent); 
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .error-msg {
+      background: var(--bg-danger);
+      color: var(--text-danger);
+      border: 1px solid var(--border-danger);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .solve-btn {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+
+    .solve-btn:hover { 
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px -1px rgba(37, 99, 235, 0.3);
+    }
+    .solve-btn:disabled { 
+      background: var(--text-ter);
+      cursor: not-allowed; 
+      transform: none;
+      box-shadow: none;
+    }
+
+    .result-section {
+      margin-top: 2rem;
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .result-section.visible { display: block; }
+
+    .result-block {
+      background: var(--bg);
+      border: 1px solid var(--border-med);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .result-block-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--bg-sec);
+    }
+
+    .tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .tag-solution { background: var(--bg-success); color: var(--text-suc); }
+    .tag-practice { background: var(--bg-info);    color: var(--text-info); }
+
+    .result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-sec);
+    }
+
+    .solution-content {
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--text);
+      white-space: pre-wrap;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .practice-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .practice-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      background: var(--bg-sec);
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .practice-item:hover {
+      border-color: var(--accent);
+      background: var(--bg);
+      transform: translateX(4px);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.05);
+    }
+
+    .q-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 24px;
+      padding-top: 2px;
+    }
+
+    .q-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .q-arrow {
+      font-size: 18px;
+      color: var(--accent);
+      opacity: 0.5;
+    }
+
+    .loading-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 1.5rem 0;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--border-info);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .new-btn {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .new-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="header">
+      <h1>AI Maths Tutor</h1>
+      <p>Instant solutions &amp; personalized practice</p>
+    </div>
+
+    <div id="input-section">
+      <div class="upload-zone" id="dropzone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+          </svg>
+        </div>
+        <p class="upload-label">
+          <strong>Upload your question</strong> or drag &amp; drop<br>
+          We'll analyze the photo instantly
+        </p>
+      </div>
+
+      <div class="preview-wrap" id="preview-wrap">
+        <img id="preview-img" src="" alt="Uploaded math question" />
+        <button class="clear-btn" id="clear-btn" title="Remove image">✕</button>
+      </div>
+
+      <div class="divider">or describe it</div>
+
+      <div class="alt-input">
+        <label for="text-input">Typed Question</label>
+        <textarea
+          id="text-input"
+          placeholder="e.g. Find the derivative of f(x) = sin(x^2)..."
+        ></textarea>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button class="solve-btn" id="solve-btn">
+        Analyze &amp; Solve ↗
+      </button>
+
+      <div class="loading-row" id="loading-row" style="display:none;">
+        <div class="spinner"></div>
+        <span id="loading-text">Maths AI is thinking…</span>
+      </div>
+    </div>
+
+    <div class="result-section" id="result-section">
+      <div class="result-block">
+        <div class="result-block-header">
+          <span class="tag tag-solution">AI Solution</span>
+          <span class="result-title" id="topic-label">Step-by-step logic</span>
+        </div>
+        <div class="solution-content" id="solution-text"></div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-block-header">
+          <span class="tag tag-practice">Skill Builder</span>
+          <span class="result-title">Practice these similar problems</span>
+        </div>
+        <ul class="practice-list" id="practice-list"></ul>
+      </div>
+
+      <button class="new-btn" id="new-btn">← Ask another question</button>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = "";
+    let imageBase64 = null;
+    let imageType = null;
+
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('dropzone');
+    const previewWrap = document.getElementById('preview-wrap');
+    const previewImg = document.getElementById('preview-img');
+    const clearBtn = document.getElementById('clear-btn');
+    const textInput = document.getElementById('text-input');
+    const solveBtn = document.getElementById('solve-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const loadingRow = document.getElementById('loading-row');
+    const loadingText = document.getElementById('loading-text');
+    const inputSection = document.getElementById('input-section');
+    const resultSection = document.getElementById('result-section');
+    const topicLabel = document.getElementById('topic-label');
+    const solutionText = document.getElementById('solution-text');
+    const practiceList = document.getElementById('practice-list');
+    const newBtn = document.getElementById('new-btn');
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) loadImage(file);
+    });
+
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadImage(file);
+    });
+
+    clearBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      clearImage();
+    });
+
+    function loadImage(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const result = ev.target.result;
+        imageBase64 = result.split(',')[1];
+        imageType = file.type;
+        previewImg.src = result;
+        previewWrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImage() {
+      imageBase64 = null;
+      imageType = null;
+      previewImg.src = '';
+      previewWrap.style.display = 'none';
+      fileInput.value = '';
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+    }
+
+    function hideError() {
+      errorMsg.style.display = 'none';
+    }
+
+    function setLoading(active, msg) {
+      solveBtn.disabled = active;
+      loadingRow.style.display = active ? 'flex' : 'none';
+      if (msg) loadingText.textContent = msg;
+    }
+
+    solveBtn.addEventListener('click', solve);
+
+    async function callGemini(contents) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        contents: contents,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              topic: { type: "STRING" },
+              solution: { type: "STRING" },
+              practice: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+              }
+            },
+            required: ["topic", "solution", "practice"]
+          }
+        }
+      };
+
+      for (let i = 0; i < 5; i++) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error('API request failed');
+          return await response.json();
+        } catch (e) {
+          if (i === 4) throw e;
+          await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+        }
+      }
+    }
+
+    async function solve() {
+      hideError();
+      const typedQ = textInput.value.trim();
+      if (!imageBase64 && !typedQ) {
+        showError('Please upload an image or type your question first.');
+        return;
+      }
+
+      setLoading(true, 'AI is processing your request...');
+
+      try {
+        const parts = [];
+        if (typedQ) parts.push({ text: `Solve this math problem: ${typedQ}` });
+        if (imageBase64) {
+          parts.push({
+            inlineData: {
+              mimeType: imageType || "image/png",
+              data: imageBase64
+            }
+          });
+          if (!typedQ) parts.push({ text: "Solve the math problem shown in this image." });
+        }
+
+        parts.push({ text: "Return a JSON object with 'topic', 'solution' (step-by-step), and 'practice' (an array of 5 similar questions)." });
+
+        const result = await callGemini([{ role: "user", parts }]);
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = JSON.parse(text);
+
+        renderResults(parsed);
+      } catch (err) {
+        console.error(err);
+        showError('The AI could not process this request. Please try a clearer description or photo.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderResults(data) {
+      topicLabel.textContent = data.topic || 'Concept Breakdown';
+      solutionText.textContent = data.solution || 'No solution generated.';
+      practiceList.innerHTML = '';
+      (data.practice || []).forEach((q, i) => {
+        const li = document.createElement('li');
+        li.className = 'practice-item';
+        li.innerHTML = `
+          <span class="q-num">Q${i + 1}</span>
+          <span class="q-text">${escapeHtml(q)}</span>
+          <span class="q-arrow">›</span>
+        `;
+        li.addEventListener('click', () => {
+          reset(false);
+          textInput.value = q;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        practiceList.appendChild(li);
+      });
+
+      inputSection.style.display = 'none';
+      resultSection.classList.add('visible');
+    }
+
+    newBtn.addEventListener('click', () => reset(true));
+
+    function reset(clearText) {
+      clearImage();
+      if (clearText) textInput.value = '';
+      inputSection.style.display = 'block';
+      resultSection.classList.remove('visible');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
